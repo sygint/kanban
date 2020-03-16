@@ -19,18 +19,29 @@ const TaskList = styled.div`
   padding: 8px;
   flex-grow: 1;
   transition: background-color 0.2s ease;
-  background: ${({isDraggingOver}) => isDraggingOver ? 'skyblue' : 'white'};
+  background: ${({ isDraggingOver, isDropDisabled }) =>
+    isDropDisabled ? "lightgrey" : isDraggingOver ? "skyblue" : "white"};
 `;
 
 export default function Group({ group, tasks }) {
   const { title, id } = group;
+  const isDropDisabled = id === "task1";
 
   return (
     <Container>
       <Title>{title}</Title>
-      <Droppable droppableId={id}>
-        {(provided, {isDraggingOver}) => (
-          <TaskList ref={provided.innerRef} {...provided.droppableProps} isDraggingOver={isDraggingOver}>
+      <Droppable
+        droppableId={id}
+        // type={id === "group3" ? "done" : "active"}
+        isDropDisabled={isDropDisabled}
+      >
+        {(provided, { isDraggingOver }) => (
+          <TaskList
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            isDraggingOver={isDraggingOver}
+            isDropDisabled={isDropDisabled}
+          >
             {tasks.map((task, index) => (
               <Task key={task.id} task={task} index={index} />
             ))}

@@ -13,15 +13,23 @@ const Container = styled.div`
 export default class App extends Component {
   state = initialData;
 
-  // onDragStart = start => {
-  //   console.log("drag started:", start);
-  // };
+  onDragStart = start => {
+    console.log("drag started:", start);
+    const startIndex = this.state.groupOrder.indexOf(start.source.droppableId);
 
-  // onDragUpdate = update => {
-  //   console.log("drag updated:", update);
-  // };
+    this.setState({
+      startIndex
+    });
+  };
+
+  onDragUpdate = update => {
+    console.log("drag updated:", update);
+  };
 
   onDragEnd = result => {
+    this.setState({
+      startIndex: null
+    });
     const { destination, source, draggableId } = result;
 
     // invalid drop
@@ -32,7 +40,6 @@ export default class App extends Component {
 
     // dropped in the same column
     if (destination.droppableId === source.droppableId) {
-
       // dropped back in place
       if (destination.index === source.index) {
         console.log("dropped back in place");
@@ -87,7 +94,7 @@ export default class App extends Component {
 
   render() {
     const { onDragStart, onDragUpdate, onDragEnd, state } = this;
-    const { groups, tasks, groupOrder } = state;
+    const { groups, tasks, groupOrder, startIndex } = state;
 
     return (
       <DragDropContext
@@ -96,11 +103,20 @@ export default class App extends Component {
         onDragEnd={onDragEnd}
       >
         <Container>
-          {groupOrder.map(groupId => {
+          {groupOrder.map((groupId, index) => {
             const group = groups[groupId];
             const groupTasks = group.taskIds.map(taskId => tasks[taskId]);
 
-            return <Group key={group.id} group={group} tasks={groupTasks} />;
+            const isDropDisabled = index < startIndex;
+
+            return (
+              <Group
+                key={group.id}
+                group={group}
+                tasks={groupTasks}
+                isDropDisabled={isDropDisabled}
+              />
+            );
           })}
         </Container>
       </DragDropContext>
