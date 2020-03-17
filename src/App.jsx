@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { DragDropContext } from "react-beautiful-dnd";
+import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import styled from "styled-components";
 
 import Group from "./Group";
@@ -8,14 +8,17 @@ import initialData from "./initial-data";
 const Container = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  background: #fff;
 `;
 
 export default class App extends Component {
   state = initialData;
 
   onDragStart = start => {
+    const { groupOrder } = this.state;
+    const { droppableId } = start.source;
     console.log("drag started:", start);
-    const startIndex = this.state.groupOrder.indexOf(start.source.droppableId);
+    const startIndex = groupOrder.indexOf(droppableId);
 
     this.setState({
       startIndex
@@ -26,11 +29,10 @@ export default class App extends Component {
     console.log("drag updated:", update);
   };
 
-  onDragEnd = result => {
+  onDragEnd = ({ destination, source, draggableId, type }) => {
     this.setState({
       startIndex: null
     });
-    const { destination, source, draggableId } = result;
 
     // invalid drop
     if (!destination) {
@@ -38,14 +40,26 @@ export default class App extends Component {
       return;
     }
 
-    // dropped in the same column
-    if (destination.droppableId === source.droppableId) {
-      // dropped back in place
-      if (destination.index === source.index) {
-        console.log("dropped back in place");
-        return;
-      }
+    // dropped back in place
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      console.log("dropped back in place");
+      return;
+    }
 
+    if (type === "column") {
+      const newGroupOrder = Array.from(this.state.groupOrder);
+      newGroupOrder.splice(source.index, 1);
+      newGroupOrder.splice(destination.index, 0, draggableId);
+
+      this.setState({ groupOrder: newGroupOrder });
+      return;
+    }
+
+    // dropped back in the same droppable
+    if (destination.droppableId === source.droppableId) {
       // get draggable's group
       const group = this.state.groups[source.droppableId];
 
@@ -102,23 +116,35 @@ export default class App extends Component {
         onDragUpdate={onDragUpdate}
         onDragEnd={onDragEnd}
       >
-        <Container>
-          {groupOrder.map((groupId, index) => {
-            const group = groups[groupId];
-            const groupTasks = group.taskIds.map(taskId => tasks[taskId]);
+        <Droppable
+          droppableId="all-columns"
+          direction="horizontal"
+          type="column"
+        >
+          {provided => (
+            <Container {...provided.droppableProps} ref={provided.innerRef}>
+              {groupOrder.map((groupId, index) => {
+                const group = groups[groupId];
+                const groupTasks = group.taskIds.map(taskId => tasks[taskId]);
 
-            const isDropDisabled = index < startIndex;
+                index < startIndex &&
+                  console.log("can't move back, drop disabled");
+                const isDropDisabled = index < startIndex;
 
-            return (
-              <Group
-                key={group.id}
-                group={group}
-                tasks={groupTasks}
-                isDropDisabled={isDropDisabled}
-              />
-            );
-          })}
-        </Container>
+                return (
+                  <Group
+                    key={group.id}
+                    group={group}
+                    tasks={groupTasks}
+                    isDropDisabled={isDropDisabled}
+                    index={index}
+                  />
+                );
+              })}
+              {provided.placeholder}
+            </Container>
+          )}
+        </Droppable>
       </DragDropContext>
     );
   }

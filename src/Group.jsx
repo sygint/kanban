@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { Droppable } from "react-beautiful-dnd";
+import { Draggable, Droppable } from "react-beautiful-dnd";
 
 import Task from "./Task";
 
@@ -20,35 +20,38 @@ const TaskList = styled.div`
   flex-grow: 1;
   transition: background-color 0.2s ease;
   background: ${({ isDraggingOver, isDropDisabled }) =>
-    isDropDisabled ? "lightgrey" : isDraggingOver ? "skyblue" : "white"};
+    isDropDisabled ? "lightgrey" : isDraggingOver ? "skyblue" : "inherit"};
 `;
 
-export default function Group({ group, tasks }) {
+export default function Group({ group, tasks, isDropDisabled, index }) {
   const { title, id } = group;
-  const isDropDisabled = id === "task1";
 
   return (
-    <Container>
-      <Title>{title}</Title>
-      <Droppable
-        droppableId={id}
-        // type={id === "group3" ? "done" : "active"}
-        isDropDisabled={isDropDisabled}
-      >
-        {(provided, { isDraggingOver }) => (
-          <TaskList
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            isDraggingOver={isDraggingOver}
+    <Draggable draggableId={id} index={index}>
+      {provided => (
+        <Container {...provided.draggableProps} ref={provided.innerRef}>
+          <Title {...provided.dragHandleProps} ref={provided.innerRef}>{title}</Title>
+          <Droppable
+            droppableId={id}
+            // type={id === "group3" ? "done" : "active"}
             isDropDisabled={isDropDisabled}
           >
-            {tasks.map((task, index) => (
-              <Task key={task.id} task={task} index={index} />
-            ))}
-            {provided.placeholder}
-          </TaskList>
-        )}
-      </Droppable>
-    </Container>
+            {(provided, { isDraggingOver }) => (
+              <TaskList
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                isDraggingOver={isDraggingOver}
+                isDropDisabled={isDropDisabled}
+              >
+                {tasks.map((task, index) => (
+                  <Task key={task.id} task={task} index={index} />
+                ))}
+                {provided.placeholder}
+              </TaskList>
+            )}
+          </Droppable>
+        </Container>
+      )}
+    </Draggable>
   );
 }
